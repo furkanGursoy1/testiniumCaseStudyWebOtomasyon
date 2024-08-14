@@ -1,0 +1,46 @@
+trigger:
+  - master
+variables:
+  buildId: $(Build.BuildId) # Dinamik olarak build ID'yi al
+stages:
+  - stage: Build #Stage oluştur
+    displayName: Build image #Stage verilen isim ile çalıştırılacak
+    jobs:
+      - job: Build
+        timeoutInMinutes: 30 #30 dakika içinde tamamlanmazsa işlemi sonlandır
+        displayName: cucumberWeb #Pipeline verilen isim ile çalıştırılacak
+        pool:
+          vmImage: ubuntu-latest #Ubuntu işletim sistemi üzerinde çalıştırılacak
+        steps:
+          - task: Maven@3 #Maven projesini çalıştır
+            inputs:
+              mavenPomFile: 'pom.xml' #Maven proje dosyası
+              testResultsFiles: '**/surefire-reports/TEST-*.xml' #Test raporlarının yolu
+              javaHomeOption: 'JDKVersion' #JDK versiyonu
+              mavenVersionOption: 'Default' #Maven versiyonu
+              mavenAuthenticateFeed: false #Maven feed doğrulaması
+              effectivePomSkip: false  #Effective pom atla
+              sonarQubeRunAnalysis: false #SonarQube analizi çalıştırma
+          - task: Bash@3
+            inputs:
+              targetType: 'inline'
+              script: 'npm install uuid@latest' #npm install komutu ile uuid kütüphanesini yükle
+          - task: PublishCucumberReport@1 #Cucumber raporunu yayınlama
+            inputs:
+              jsonDir: './target/'
+              outputPath: './target/cucumber-html-reports' #Raporun çıktı alacağı klasör
+              theme: 'bootstrap' #Raporun teması
+              reportSuiteAsScenarios: true #Raporun senaryoları olarak gösterilmesi
+          - task: Bash@3 #Teams'e bildirim gönderme
+            inputs:
+              targetType: 'inline'
+              script: | #Build ID mevcut değilse hata mesajı ver
+                if [ -z "$(Build.BuildId)" ]; then 
+                  echo "Build ID mevcut değil. Mesaj gönderilemiyor."
+                  exit 1
+                else
+                  curl -X POST -H "Content-Type: application/json" \  
+                       -d "{\"text\":\"CucumberWeb test otomasyonu tamamlandı. Raporu incelemek için [tıklayabilirsiniz](https://dev.azure.com/devops/cucumberWeb/_build/results?buildId=$(Build.BuildId)&view=MaciejMaciejewski.azure-pipelines-cucumber.build-cucumber-tab).\"}" \
+                       'webhook-url'
+                fi
+            displayName: 'Send Notification to Teams'
