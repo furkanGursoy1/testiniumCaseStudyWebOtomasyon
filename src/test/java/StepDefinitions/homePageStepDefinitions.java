@@ -29,7 +29,7 @@ public class homePageStepDefinitions {
         ExcelUtil excelUtil = new ExcelUtil("Sayfa1");
         String kelime = excelUtil.getCellData(0, 0);
         System.out.println("Excel dosyasındaki birinci satır birinci sutündaki kelime = " + kelime);
-        Util.waitForElementToBeClickable(HomePage.searchBoxBtn, 3);
+        Util.sleep(2);
         HomePage.searchBoxBtn.click();
         Util.waitForElementToBeClickable(HomePage.searchBoxInput, 3);
         HomePage.searchBoxInput.sendKeys(kelime);
