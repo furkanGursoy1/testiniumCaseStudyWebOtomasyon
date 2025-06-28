@@ -12,7 +12,7 @@ import org.junit.runner.RunWith;
         features = "src/test/resources/features",
         glue = "StepDefinitions",
         dryRun = false,
-        tags = "@reg"
+        tags = "@addbasket"
 
 )
 public class CukesRunner {
